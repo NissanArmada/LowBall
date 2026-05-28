@@ -1,6 +1,4 @@
 import pytest
-from core.config import settings
-import time
 import httpx
 from main import app
 from unittest.mock import patch
@@ -34,10 +32,12 @@ async def test_listing_analyze_background_task_trigger():
     """
     with patch("api.v1.endpoints.listing.background_market_scrape") as mock_scrape:
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-            dummy_image = b"fake image"
-            files = {"file": ("test.png", dummy_image, "image/png")}
-            
-            response = await client.post("/api/v1/listing/analyze", files=files)
+            import os
+            # Use a real image to prevent Gemini 400 Invalid Argument error
+            test_image_path = os.path.join(os.path.dirname(__file__), "general_image_test.png")
+            with open(test_image_path, "rb") as f:
+                files = {"file": ("test.png", f, "image/png")}
+                response = await client.post("/api/v1/listing/analyze", files=files)
             
             assert response.status_code == 200
             assert "session_id" in response.json()

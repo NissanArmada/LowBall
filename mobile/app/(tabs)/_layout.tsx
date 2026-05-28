@@ -14,40 +14,25 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
         headerShown: useClientOnlyValue(false, true),
-      }}>
-      <Tabs.Screen
+        }}>
+        <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => (
-            <SymbolView
-              name={{
-                ios: 'house.fill',
-                android: 'home',
-                web: 'home',
-              }}
-              tintColor={color}
-              size={28}
-            />
-          ),
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable style={{ marginRight: 15 }}>
-                {({ pressed }) => (
-                  <SymbolView
-                    name={{ ios: 'info.circle', android: 'info', web: 'info' }}
-                    size={25}
-                    tintColor={Colors[colorScheme].text}
-                    style={{ opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+        title: 'Home',
+        tabBarIcon: ({ color }) => (
+          <SymbolView
+            name={{
+              ios: 'house.fill',
+              android: 'home',
+              web: 'home',
+            }}
+            tintColor={color}
+            size={28}
+          />
+        ),
         }}
-      />
-      <Tabs.Screen
-        name="scanner"
+        />
+        <Tabs.Screen        name="scanner"
         options={{
           title: 'Scanner',
           tabBarIcon: ({ color }) => (

@@ -3,7 +3,6 @@ from core.config import settings
 from services.resilience import llm_retry_decorator, llm_circuit_breaker
 from services.ai import ai_provider
 from core.utils import clean_schema, strip_json_markdown
-import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,6 +26,7 @@ Before providing the final response, you must internally simulate three distinct
 
 FINAL OUTPUT:
 Synthesize these thoughts into a professional, realistic, and effective message to the seller.
+IMPORTANT: DO NOT use em-dashes (—) or en-dashes (–) in your final response. Use simple commas or periods for a more casual, human feel.
 """
 
 def get_windowed_history(state: NegotiationState, window_size: int = settings.CONVERSATION_WINDOW) -> str:
@@ -70,12 +70,29 @@ async def get_negotiation_response(state: NegotiationState) -> SupervisorSynthes
     Invokes the Unified Agent with Council-of-Thought, protected by 
     Circuit Breakers and Retry logic.
     """
-    prompt = SYSTEM_PROMPT.format(
-        item_name=state.item_metadata.item_name,
-        condition=state.item_metadata.condition,
-        market_avg=state.analytical_data.calculated_fair_market_avg,
-        walk_away=state.analytical_data.recommended_walk_away_price
-    )
-    history_str = get_windowed_history(state)
-    
-    return await llm_circuit_breaker.call(_execute_llm_call, prompt, history_str)
+    try:
+        prompt = SYSTEM_PROMPT.format(
+            item_name=state.item_metadata.item_name,
+            condition=state.item_metadata.condition,
+            market_avg=state.analytical_data.calculated_fair_market_avg,
+            walk_away=state.analytical_data.recommended_walk_away_price
+        )
+        history_str = get_windowed_history(state)
+        if not history_str.strip():
+            history_str = "[No previous messages. You are initiating the conversation with the seller.]"
+        
+        return await llm_circuit_breaker.call(_execute_llm_call, prompt, history_str)
+    except Exception as e:
+        error_msg = str(e)
+        # Gracefully handle Quota (429) or Server Errors (500)
+        if any(token in error_msg for token in ["429", "ResourceExhausted", "500", "InternalServerError"]):
+            logger.warning(f"Gemini API issue detected: {error_msg}. Yielding cooling off message.")
+            return SupervisorSynthesis(
+                aggressive_thought="Error",
+                sympathetic_thought="Error",
+                analytical_thought="Error",
+                final_response="Whoa, slow down! The AI is cooling off! Please wait a minute.",
+                rationale="Gemini API rate limit or internal error hit. Graceful fallback engaged.",
+                suggested_next_price=state.current_lowball_price
+            )
+        raise e

@@ -1,6 +1,5 @@
 import aiosqlite
-import json
-from models.schemas import NegotiationState, ListingMetadata, AnalyticalData, Message
+from models.schemas import NegotiationState
 from typing import Optional
 from core.config import settings
 

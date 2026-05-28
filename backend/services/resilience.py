@@ -1,13 +1,14 @@
 import logging
-import asyncio
 from typing import Callable, Any
 from tenacity import (
     retry,
     stop_after_attempt,
     wait_exponential,
     retry_if_exception_type,
+    retry_if_not_exception_type,
     before_sleep_log
 )
+import google.api_core.exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +21,11 @@ class CircuitBreakerOpen(Exception):
     """Raised when the circuit breaker is open and requests are blocked."""
     pass
 
-# Retry configuration for LLM calls:
-# - Retry up to 3 times
-# - Exponential backoff starting at 1s
-# - Only retry on transient/network exceptions
+# Only retry once for transient issues, NEVER on quota exhaustion (429)
 llm_retry_decorator = retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=10),
+    stop=stop_after_attempt(2),
+    wait=wait_exponential(multiplier=2, min=2, max=15),
+    retry=retry_if_not_exception_type(google.api_core.exceptions.ResourceExhausted),
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True
 )
@@ -36,7 +35,7 @@ class CircuitBreaker:
     A simplified Circuit Breaker to protect the system from failing external services.
     If failures exceed a threshold, it 'opens' and blocks calls for a cooldown period.
     """
-    def __init__(self, failure_threshold: int = 5, recovery_timeout: int = 30):
+    def __init__(self, failure_threshold: int = 3, recovery_timeout: int = 120):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.failure_count = 0
@@ -70,5 +69,5 @@ class CircuitBreaker:
             raise e
 
 # Global Circuit Breakers for different external domains
-llm_circuit_breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=60)
-vision_circuit_breaker = CircuitBreaker(failure_threshold=3, recovery_timeout=30)
+llm_circuit_breaker = CircuitBreaker(failure_threshold=2, recovery_timeout=120)
+vision_circuit_breaker = CircuitBreaker(failure_threshold=2, recovery_timeout=60)

@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.config import settings
 
-def test_full_listing_to_chat_flow(image_path: str):
+def run_full_listing_to_chat_flow(image_path: str):
     base_url = "http://127.0.0.1:8000"
     ws_url = "ws://127.0.0.1:8000/api/v1/chat"
     analyze_url = f"{base_url}/api/v1/listing/analyze"
@@ -21,7 +21,7 @@ def test_full_listing_to_chat_flow(image_path: str):
         return
 
     # 1. Analyze Listing (Vision Agent)
-    print(f"\n--- STEP 1: VISION ANALYSIS ---")
+    print("\n--- STEP 1: VISION ANALYSIS ---")
     print(f"Uploading real screenshot: {image_path}...")
     
     with open(image_path, "rb") as f:
@@ -70,14 +70,14 @@ def test_full_listing_to_chat_flow(image_path: str):
                 return
             
             print("\n--- AI COUNCIL-OF-THOUGHT ---")
-            print(f"AGGRESSIVE:  {data.get('aggressive_thought')}")
-            print(f"SYMPATHETIC: {data.get('sympathetic_thought')}")
-            print(f"ANALYTICAL:  {data.get('analytical_thought')}")
-            print(f"RATIONALE:   {data.get('rationale')}")
+            print(f"AGGRESSIVE:  {data.get('synthesis', {}).get('aggressive_thought')}")
+            print(f"SYMPATHETIC: {data.get('synthesis', {}).get('sympathetic_thought')}")
+            print(f"ANALYTICAL:  {data.get('synthesis', {}).get('analytical_thought')}")
+            print(f"RATIONALE:   {data.get('synthesis', {}).get('rationale')}")
             print("------------------------------")
             
-            print(f"\n[AI Assistant]: {data['final_response']}")
-            print(f"(Suggested Next Price: ${data['suggested_next_price']})")
+            print(f"\n[AI Assistant]: {data.get('synthesis', {}).get('final_response')}")
+            print(f"(Suggested Next Price: ${data.get('synthesis', {}).get('suggested_next_price')})")
             
             # Second Message: Follow up
             time.sleep(2)
@@ -88,8 +88,8 @@ def test_full_listing_to_chat_flow(image_path: str):
             raw_res2 = await websocket.recv()
             data2 = json.loads(raw_res2)
             
-            print(f"\n[AI Assistant]: {data2['final_response']}")
-            print(f"(Suggested Next Price: ${data2['suggested_next_price']})")
+            print(f"\n[AI Assistant]: {data2.get('synthesis', {}).get('final_response')}")
+            print(f"(Suggested Next Price: ${data2.get('synthesis', {}).get('suggested_next_price')})")
 
     try:
         asyncio.run(run_chat())
@@ -105,4 +105,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         test_image = sys.argv[1]
         
-    test_full_listing_to_chat_flow(test_image)
+    run_full_listing_to_chat_flow(test_image)

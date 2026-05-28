@@ -3,7 +3,6 @@ import asyncio
 from models.schemas import NegotiationState, ListingMetadata, AnalyticalData, Message
 from agents.unified import get_windowed_history
 from services.resilience import CircuitBreaker, CircuitBreakerOpen
-from core.config import settings
 
 @pytest.mark.asyncio
 async def test_memory_windowing_enforcement():

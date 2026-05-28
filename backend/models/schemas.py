@@ -10,8 +10,7 @@ class Message(BaseModel):
 class ListingAnalyzeRequest(BaseModel):
     image_base64: str
 
-class ListingMetadata(BaseModel):
-    session_id: Optional[str] = None
+class ItemExtraction(BaseModel):
     item_name: str
     original_listing_price: float
     suggested_low_price: float
@@ -19,10 +18,14 @@ class ListingMetadata(BaseModel):
     condition: str
     description: str
 
+class ListingMetadata(ItemExtraction):
+    session_id: Optional[str] = None
+
 class AnalyticalData(BaseModel):
     calculated_fair_market_avg: float
     price_volatility: float
     recommended_walk_away_price: float
+    is_researched: bool = False
 
 class SupervisorSynthesis(BaseModel):
     aggressive_thought: str
@@ -31,6 +34,10 @@ class SupervisorSynthesis(BaseModel):
     final_response: str
     rationale: str
     suggested_next_price: float
+
+class ChatResponse(BaseModel):
+    synthesis: SupervisorSynthesis
+    analytical_data: AnalyticalData
 
 class NegotiationState(BaseModel):
     session_id: str

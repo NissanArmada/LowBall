@@ -3,9 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "buffer": "^6.0.3",
     "expo": "~56.0.4",
     "expo-constants": "~56.0.15",
     "expo-font": "~56.0.5",
+    "expo-image-picker": "~56.0.14",
     "expo-linking": "~56.0.11",
     "expo-router": "~56.2.6",
     "expo-splash-screen": "~56.0.10",
@@ -22,14 +24,19 @@
     "react-native-worklets": "0.8.3"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
     "@types/react": "~19.2.2",
+    "axios": "^1.16.1",
+    "form-data": "^4.0.5",
+    "ts-node": "^10.9.2",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test:api": "ts-node --project tsconfig.node.json scripts/test-api.ts"
   },
   "private": true
 }

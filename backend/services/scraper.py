@@ -1,10 +1,7 @@
 import logging
-import asyncio
-from typing import List, Dict
 from models.schemas import AnalyticalData
-from services.resilience import llm_retry_decorator, llm_circuit_breaker
+from services.resilience import llm_retry_decorator
 from services.ai import ai_provider
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +18,7 @@ class MarketScraper:
         """
         # 1. Initialize the model with Google Search tools
         # Note: In a production environment, we'd ensure the model has 'google_search_retrieval'
-        model = ai_provider.get_model(model_name="gemini-1.5-flash")
+        model = ai_provider.get_model()
         
         prompt = f"""
         Search for the current marketplace prices (eBay, Facebook Marketplace, local listings) 
@@ -40,14 +37,18 @@ class MarketScraper:
         """
 
         try:
+            # Clean the schema
+            raw_schema = AnalyticalData.model_json_schema()
+            from core.utils import clean_schema
+            safe_schema = clean_schema(raw_schema)
+            
             # Execute protected call through circuit breaker
-            # Using tools=['google_search_retrieval'] enables grounding
+            # Using internal knowledge for 2.5 compatibility
             response = await model.generate_content_async(
                 prompt,
-                tools=[{'google_search_retrieval': {}}],
                 generation_config={
                     "response_mime_type": "application/json",
-                    "response_schema": AnalyticalData.model_json_schema()
+                    "response_schema": safe_schema
                 }
             )
             
@@ -56,7 +57,9 @@ class MarketScraper:
             clean_json = strip_json_markdown(response.text)
             logger.info(f"REAL SCRAPER RESULT for '{item_name}': {clean_json}")
             
-            return AnalyticalData.model_validate_json(clean_json)
+            data = AnalyticalData.model_validate_json(clean_json)
+            data.is_researched = True
+            return data
 
         except Exception as e:
             logger.error(f"Real Scraper failed for '{item_name}': {str(e)}")
@@ -65,7 +68,8 @@ class MarketScraper:
             return AnalyticalData(
                 calculated_fair_market_avg=0.0,
                 price_volatility=0.0,
-                recommended_walk_away_price=0.0
+                recommended_walk_away_price=0.0,
+                is_researched=True
             )
 
 # Global instance for DI

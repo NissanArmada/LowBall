@@ -21,7 +21,7 @@ async def test_ai_diagnostic():
         
         print("\n--- AI Provider Diagnostic: PASSED ---")
     except Exception as e:
-        print(f"\n--- AI Provider Diagnostic: FAILED ---")
+        print("\n--- AI Provider Diagnostic: FAILED ---")
         print(f"Error: {str(e)}")
 
 if __name__ == "__main__":

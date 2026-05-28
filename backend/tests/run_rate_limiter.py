@@ -8,12 +8,16 @@ async def test_rate_limiter():
     # 1. Create a session
     print("Step 1: Creating session...")
     analyze_url = "http://127.0.0.1:8000/api/v1/listing/analyze"
-    files = {"file": ("test.png", b"dummy", "image/png")}
-    res = requests.post(analyze_url, files=files)
+    import os
+    test_image_path = os.path.join(os.path.dirname(__file__), "general_image_test.png")
+    with open(test_image_path, "rb") as f:
+        files = {"file": ("test.png", f, "image/png")}
+        res = requests.post(analyze_url, files=files)
     session_id = res.json()["session_id"]
     
     uri = f"ws://127.0.0.1:8000/api/v1/chat/{session_id}"
-    headers = {"X-API-Token": "lowball_debug_token"}
+    from core.config import settings
+    headers = {"X-API-Token": settings.API_SECRET_TOKEN}
     async with websockets.connect(uri, additional_headers=headers) as websocket:
         print(f"Connected to {uri}")
         

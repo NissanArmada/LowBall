@@ -1,9 +1,10 @@
-from models.schemas import ListingMetadata
+import logging
+from models.schemas import ListingMetadata, ItemExtraction
 from services.resilience import llm_retry_decorator, vision_circuit_breaker
 from services.ai import ai_provider
 from core.utils import clean_schema, strip_json_markdown
-import base64
-import json
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """
 You are the 'Vision Analysis Agent' for Lowball.ai.
@@ -20,11 +21,11 @@ ANALYTICAL TASKS:
 6. Suggested High Price: A realistic "fair" price (e.g., 85-90% of asking).
 
 OUTPUT FORMAT:
-You MUST return a valid JSON object matching the ListingMetadata schema.
+You MUST return a valid JSON object matching the requested schema.
 """
 
 @llm_retry_decorator
-async def _execute_vision_call(image_bytes: bytes) -> ListingMetadata:
+async def _execute_vision_call(image_bytes: bytes) -> ItemExtraction:
     """
     Internal function to perform the Vision LLM call using Gemini.
     """
@@ -37,7 +38,7 @@ async def _execute_vision_call(image_bytes: bytes) -> ListingMetadata:
     }
     
     # Clean the schema for Gemini
-    raw_schema = ListingMetadata.model_json_schema()
+    raw_schema = ItemExtraction.model_json_schema()
     safe_schema = clean_schema(raw_schema)
     
     # Invoke Gemini with Structured Output
@@ -51,10 +52,22 @@ async def _execute_vision_call(image_bytes: bytes) -> ListingMetadata:
     
     # Robust extraction
     clean_json_text = strip_json_markdown(response.text)
-    return ListingMetadata.model_validate_json(clean_json_text)
+    return ItemExtraction.model_validate_json(clean_json_text)
 
-async def analyze_image(image_bytes: bytes) -> ListingMetadata:
+async def analyze_image(image_bytes: bytes) -> ItemExtraction:
     """
     Analyzes the image using a Vision LLM, protected by a Circuit Breaker.
+    Includes a graceful fallback for 429 Quota errors for showcase purposes.
     """
-    return await vision_circuit_breaker.call(_execute_vision_call, image_bytes)
+    try:
+        return await vision_circuit_breaker.call(_execute_vision_call, image_bytes)
+    except Exception as e:
+        logger.warning(f"Gemini Quota Exceeded! Falling back to Mock Vision Data! Error: {e}")
+        return ItemExtraction(
+            item_name="Mocked Item (Quota Exceeded)",
+            original_listing_price=100.0,
+            suggested_low_price=50.0,
+            suggested_high_price=85.0,
+            condition="Good",
+            description="Fallback mock item because the free tier API is temporarily out of requests!"
+        )

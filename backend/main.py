@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from api.v1.endpoints import listing, chat
 from services.store import store
 from core.config import settings
@@ -23,6 +24,15 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     lifespan=lifespan
+)
+
+# CORS Configuration: Optimized for Mobile Web Dev
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex="http://localhost:.*", # More robust for local dev
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*", "X-API-Token"], # Explicitly allow our custom auth header
 )
 
 # Observability Middleware: Track Request Latency

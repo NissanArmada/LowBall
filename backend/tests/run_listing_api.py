@@ -4,10 +4,7 @@ import os
 def test_listing_analysis():
     url = "http://127.0.0.1:8000/api/v1/listing/analyze"
     
-    # Create a dummy image file for testing
-    dummy_image_path = "test_screenshot.png"
-    with open(dummy_image_path, "wb") as f:
-        f.write(b"fake image data")
+    dummy_image_path = os.path.join(os.path.dirname(__file__), "general_image_test.png")
 
     try:
         with open(dummy_image_path, "rb") as f:

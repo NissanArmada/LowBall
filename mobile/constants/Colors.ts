@@ -1,19 +1,27 @@
-const tintColorLight = '#2f95dc';
+const tintColorLight = '#007AFF'; // Modern Blue
 const tintColorDark = '#fff';
 
 export default {
   light: {
-    text: '#000',
-    background: '#fff',
+    text: '#1C1C1E',
+    background: '#F2F2F7', // iOS System Gray 6
     tint: tintColorLight,
-    tabIconDefault: '#ccc',
+    tabIconDefault: '#8E8E93',
     tabIconSelected: tintColorLight,
+    card: '#FFFFFF',
+    border: '#C6C6C8',
+    success: '#34C759',
+    error: '#FF3B30',
   },
   dark: {
-    text: '#fff',
-    background: '#000',
+    text: '#FFFFFF',
+    background: '#000000',
     tint: tintColorDark,
-    tabIconDefault: '#ccc',
+    tabIconDefault: '#8E8E93',
     tabIconSelected: tintColorDark,
+    card: '#1C1C1E',
+    border: '#38383A',
+    success: '#30D158',
+    error: '#FF453A',
   },
 };

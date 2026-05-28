@@ -17,6 +17,7 @@ class AIProvider:
 
     def get_model(self, model_name: str = "gemini-flash-latest"):
         """Returns a configured GenerativeModel instance."""
+        # Using Flash for everything to ensure free-tier compatibility
         return genai.GenerativeModel(model_name)
 
     def get_vision_model(self, model_name: str = "gemini-flash-latest"):

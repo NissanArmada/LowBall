@@ -2,7 +2,6 @@ import pytest
 import asyncio
 import os
 from services.store import SessionStore
-from core.config import settings
 from fastapi.testclient import TestClient
 from main import app
 
