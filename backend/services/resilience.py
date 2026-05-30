@@ -21,11 +21,14 @@ class CircuitBreakerOpen(Exception):
     """Raised when the circuit breaker is open and requests are blocked."""
     pass
 
-# Only retry once for transient issues, NEVER on quota exhaustion (429)
+# Retry strictly on quota exhaustion (429) and transient service errors (503)
 llm_retry_decorator = retry(
-    stop=stop_after_attempt(2),
-    wait=wait_exponential(multiplier=2, min=2, max=15),
-    retry=retry_if_not_exception_type(google.api_core.exceptions.ResourceExhausted),
+    stop=stop_after_attempt(4),
+    wait=wait_exponential(multiplier=1, min=4, max=60),
+    retry=retry_if_exception_type((
+        google.api_core.exceptions.ResourceExhausted,
+        google.api_core.exceptions.ServiceUnavailable
+    )),
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True
 )
