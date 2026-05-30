@@ -1,15 +1,22 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Depends
 from models.schemas import ListingMetadata, NegotiationState, AnalyticalData
-from services import vision, scraper, store
+from services import store
+from services.scraper import MarketScraper
 from core.config import settings
-from core.dependencies import get_store
+from core.dependencies import get_store, get_scraper, get_vision_service, verify_token
 import logging
 import uuid
+from typing import Callable, Awaitable
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-async def background_market_scrape(session_id: str, item_name: str, db: store.SessionStore):
+async def background_market_scrape(
+    session_id: str, 
+    item_name: str, 
+    db: store.SessionStore,
+    scraper_service: MarketScraper
+):
     """
     Background task to perform market scraping and update the session's analytical data.
     Also initiates the first AI greeting to ensure it only happens once.
@@ -20,7 +27,7 @@ async def background_market_scrape(session_id: str, item_name: str, db: store.Se
     logger.info(f"STARTING background task for session {session_id}")
     try:
         # 1. Perform market analysis
-        analytical_res = await scraper.scraper.analyze_market(item_name)
+        analytical_res = await scraper_service.analyze_market(item_name)
         
         # 2. Load current state
         state = await db.load_state(session_id)
@@ -42,7 +49,7 @@ async def background_market_scrape(session_id: str, item_name: str, db: store.Se
             
             # Replace placeholder with real response
             state.history[-1] = Message(role="ai", content=response.final_response)
-            state.current_lowball_price = response.suggested_next_price
+            state.current_lowball_price = response.suggest_next_price
             
         await db.save_state(state)
         logger.info(f"SUCCESS: Session {session_id} initialized with research and greeting.")
@@ -50,14 +57,17 @@ async def background_market_scrape(session_id: str, item_name: str, db: store.Se
     except Exception as e:
         logger.error(f"FAILURE in background task for {session_id}: {str(e)}")
 
-@router.post("/analyze", response_model=ListingMetadata)
+@router.post("/analyze", response_model=ListingMetadata, dependencies=[Depends(verify_token)])
 async def analyze_listing(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    db: store.SessionStore = Depends(get_store)
+    db: store.SessionStore = Depends(get_store),
+    scraper_service: MarketScraper = Depends(get_scraper),
+    vision_service: Callable[[bytes], Awaitable] = Depends(get_vision_service)
 ):
     """
     Analyzes a screenshot and triggers a persistent background market scrape.
+    Requires X-API-Token header.
     """
     try:
         if file.size and file.size > settings.MAX_FILE_SIZE:
@@ -68,9 +78,8 @@ async def analyze_listing(
         if len(image_content) > settings.MAX_FILE_SIZE:
              raise HTTPException(status_code=413, detail="File too large.")
 
-        # 1. Primary Analysis (Vision)
-        # vision.analyze_image now returns ItemExtraction
-        extraction = await vision.analyze_image(image_content)
+        # 1. Primary Analysis (Vision) via injected service
+        extraction = await vision_service(image_content)
         
         # 2. Generate permanent session_id
         session_id = str(uuid.uuid4())
@@ -96,8 +105,14 @@ async def analyze_listing(
         )
         await db.save_state(initial_state)
         
-        # 5. Trigger the asynchronous Scraper task
-        background_tasks.add_task(background_market_scrape, session_id, metadata.item_name, db)
+        # 5. Trigger the asynchronous Scraper task with injected service
+        background_tasks.add_task(
+            background_market_scrape, 
+            session_id, 
+            metadata.item_name, 
+            db, 
+            scraper_service
+        )
         
         return metadata
         

@@ -1,5 +1,5 @@
 <p align="center">
-   <img src="https://c.tenor.com/M4kj6V6ZDOkAAAAd/tenor.gif" alt="Toyota GR">
+   <img src="https://c.tenor.com/M4kj6V6ZDOkAAAAd/tenor.gif" alt="Uma FB Marketplace">
 </p>
 
 # 💸 Lowball.ai (Work In Progress)
@@ -32,7 +32,7 @@ Instead of multiple expensive and high-latency LLM calls, the system uses a sing
   ├── api/        # REST & WebSocket endpoints
   ├── core/       # Centralized Config & DI logic
   ├── models/     # Pydantic schemas (Source of Truth)
-  ├── services/   # Persistence and Vision services
+  ├── services/   # Persistence, Vision, Scraper, Limiter, and Resilience
   └── scripts/    # Type-generation & utility scripts
 
 /mobile           # React Native (Expo)

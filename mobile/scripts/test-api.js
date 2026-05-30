@@ -9,9 +9,9 @@ const fs = require('fs');
 async function runTest() {
   console.log("--- STARTING MOBILE API VERIFICATION (JS) ---");
   
-  const API_BASE_URL = 'http://127.0.0.1:8000';
+  const API_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:8000';
   const API_V1_STR = '/api/v1';
-  const API_TOKEN = 'lowball_debug_token';
+  const API_TOKEN = process.env.API_TOKEN || 'lowball_debug_token';
   
   const testImagePath = path.join(__dirname, '..', '..', 'backend', 'tests', 'general_image_test.png');
   

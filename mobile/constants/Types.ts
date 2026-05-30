@@ -1,12 +1,12 @@
 // AUTO-GENERATED - DO NOT EDIT MANUALLY
+
 export interface Message {
-  role: 'user' | 'seller' | 'ai';
+  role: string;
   content: string;
-  timestamp: string;
+  timestamp?: string;
 }
 
-export interface ListingMetadata {
-  session_id?: string;
+export interface ItemExtraction {
   item_name: string;
   original_listing_price: number;
   suggested_low_price: number;
@@ -15,11 +15,21 @@ export interface ListingMetadata {
   description: string;
 }
 
+export interface ListingMetadata {
+  item_name: string;
+  original_listing_price: number;
+  suggested_low_price: number;
+  suggested_high_price: number;
+  condition: string;
+  description: string;
+  session_id?: string;
+}
+
 export interface AnalyticalData {
   calculated_fair_market_avg: number;
   price_volatility: number;
   recommended_walk_away_price: number;
-  is_researched: boolean;
+  is_researched?: boolean;
 }
 
 export interface SupervisorSynthesis {
@@ -42,4 +52,12 @@ export interface NegotiationState {
   analytical_data: AnalyticalData;
   history: Message[];
   current_lowball_price: number;
+}
+
+export interface ChatMessage {
+  user_message: string;
+}
+
+export interface ListingAnalyzeRequest {
+  image_base64: string;
 }
